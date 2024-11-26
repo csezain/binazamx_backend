@@ -1,0 +1,724 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model activity_log {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  log_name     String?   @db.VarChar(255)
+  description  String    @db.Text
+  subject_id   BigInt?   @db.UnsignedBigInt
+  subject_type String?   @db.VarChar(255)
+  causer_id    BigInt?   @db.UnsignedBigInt
+  causer_type  String?   @db.VarChar(255)
+  properties   String?   @db.LongText
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+
+  @@index([log_name], map: "activity_log_log_name_index")
+  @@index([causer_id, causer_type], map: "causer")
+  @@index([subject_id, subject_type], map: "subject")
+}
+
+model announcements {
+  id         BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  area       announcements_area?
+  type       announcements_type  @default(info)
+  message    String              @db.Text
+  enabled    Boolean             @default(true)
+  starts_at  DateTime?           @db.Timestamp(0)
+  ends_at    DateTime?           @db.Timestamp(0)
+  created_at DateTime?           @db.Timestamp(0)
+  updated_at DateTime?           @db.Timestamp(0)
+}
+
+model balances {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt    @db.UnsignedBigInt
+  balance      Decimal   @default(0.00) @db.Decimal(10, 2)
+  credit_limit Decimal   @default(0.00) @db.Decimal(10, 2)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "balances_user_id_foreign")
+
+  @@index([user_id], map: "balances_user_id_foreign")
+}
+
+model batch_shipments {
+  id                                      BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  batch_name                              String?   @db.VarChar(255)
+  batch_number                            String    @unique(map: "batch_shipments_batch_number_unique") @db.VarChar(255)
+  driver_id                               BigInt?   @db.UnsignedBigInt
+  status                                  String    @db.VarChar(255)
+  created_by                              BigInt?   @db.UnsignedBigInt
+  total_shipments_count                   Int?
+  total_weight                            Decimal?  @db.Decimal(10, 2)
+  created_at                              DateTime? @db.Timestamp(0)
+  updated_at                              DateTime? @db.Timestamp(0)
+  payment_status                          String?   @db.VarChar(255)
+  users_batch_shipments_created_byTousers users?    @relation("batch_shipments_created_byTousers", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "batch_shipments_created_by_foreign")
+  users_batch_shipments_driver_idTousers  users?    @relation("batch_shipments_driver_idTousers", fields: [driver_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "batch_shipments_driver_id_foreign")
+
+  @@index([created_by], map: "batch_shipments_created_by_foreign")
+  @@index([driver_id], map: "batch_shipments_driver_id_foreign")
+}
+
+model category {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title       String    @db.VarChar(255)
+  description String    @db.VarChar(255)
+  slug        String    @db.VarChar(255)
+  status      Boolean   @default(false)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model cod_price_requests {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id    BigInt    @db.UnsignedBigInt
+  user_id        BigInt    @db.UnsignedBigInt
+  previous_price String?   @db.VarChar(255)
+  new_price      String?   @db.VarChar(255)
+  status         String?   @default("pending") @db.VarChar(255)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  shipments      shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "cod_price_requests_shipment_id_foreign")
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "cod_price_requests_user_id_foreign")
+
+  @@index([shipment_id], map: "cod_price_requests_shipment_id_foreign")
+  @@index([user_id], map: "cod_price_requests_user_id_foreign")
+}
+
+model collect_from_shippers {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id     BigInt    @db.UnsignedBigInt
+  shipment_id Int?
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  route       String?   @db.VarChar(255)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "collect_from_shippers_user_id_foreign")
+
+  @@index([user_id], map: "collect_from_shippers_user_id_foreign")
+}
+
+model contacts {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String    @db.VarChar(255)
+  email      String    @db.VarChar(255)
+  subject    String    @db.VarChar(255)
+  message    String    @db.Text
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model driver_documents {
+  id                    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id               BigInt    @db.UnsignedBigInt
+  EID_front             String?   @db.VarChar(255)
+  EID_back              String?   @db.VarChar(255)
+  driving_license_front String?   @db.VarChar(255)
+  driving_license_back  String?   @db.VarChar(255)
+  passport              String?   @db.VarChar(255)
+  visa_copy             String?   @db.VarChar(255)
+  created_at            DateTime? @db.Timestamp(0)
+  updated_at            DateTime? @db.Timestamp(0)
+  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "driver_documents_user_id_foreign")
+
+  @@index([user_id], map: "driver_documents_user_id_foreign")
+}
+
+model drivers {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  first_name   String    @db.VarChar(255)
+  last_name    String    @db.VarChar(255)
+  email        String    @unique(map: "drivers_email_unique") @db.VarChar(255)
+  phone_number String    @db.VarChar(255)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  user_id      BigInt    @db.UnsignedBigInt
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "drivers_user_id_foreign")
+
+  @@index([user_id], map: "drivers_user_id_foreign")
+}
+
+model drs_sheets {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  drs_number String?   @db.VarChar(255)
+  driver_id  Int?
+  status     String?   @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model drs_shipments {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  drs_sheet_id Int?
+  shipment_id  Int?
+  status       String?   @db.VarChar(255)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+}
+
+model expense_types {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model expenses {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  amount      Decimal   @db.Decimal(10, 2)
+  description String?   @db.VarChar(255)
+  date        DateTime  @db.Date
+  type        String?   @db.VarChar(255)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model faqs {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  question   String    @db.VarChar(255)
+  answer     String    @db.Text
+  status     Boolean   @default(false)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model fines {
+  id             BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  driver_id      BigInt               @db.UnsignedBigInt
+  amount         Decimal              @db.Decimal(8, 2)
+  description    String               @db.VarChar(255)
+  payment_status fines_payment_status @default(unpaid)
+  date_issued    DateTime             @db.Date
+  created_at     DateTime?            @db.Timestamp(0)
+  updated_at     DateTime?            @db.Timestamp(0)
+
+  @@index([driver_id], map: "fines_driver_id_foreign")
+}
+
+model invoices {
+  id                  BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  driver_id           Int?
+  cod_price_total     Decimal         @db.Decimal(10, 2)
+  extra_charges_total Decimal         @db.Decimal(10, 2)
+  total_amount        Decimal         @db.Decimal(10, 2)
+  invoice_number      String?         @db.VarChar(255)
+  shipper_id          String?         @db.VarChar(255)
+  status              invoices_status @default(Unpaid)
+  created_at          DateTime?       @db.Timestamp(0)
+  updated_at          DateTime?       @db.Timestamp(0)
+}
+
+model ledgers {
+  id               BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id          BigInt?                  @db.UnsignedBigInt
+  transaction_type ledgers_transaction_type
+  amount           Decimal                  @db.Decimal(10, 2)
+  description      String                   @db.VarChar(255)
+  shipment_id      BigInt?                  @db.UnsignedBigInt
+  created_at       DateTime?                @db.Timestamp(0)
+  updated_at       DateTime?                @db.Timestamp(0)
+
+  @@index([shipment_id], map: "ledgers_shipment_id_foreign")
+  @@index([user_id], map: "ledgers_user_id_foreign")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model model_has_permissions {
+  permission_id BigInt @db.UnsignedBigInt
+  model_type    String @db.VarChar(255)
+  model_id      BigInt @db.UnsignedBigInt
+
+  @@id([permission_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_permissions_model_id_model_type_index")
+}
+
+model model_has_roles {
+  role_id    BigInt @db.UnsignedBigInt
+  model_type String @db.VarChar(255)
+  model_id   BigInt @db.UnsignedBigInt
+
+  @@id([role_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_roles_model_id_model_type_index")
+}
+
+model packages {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id BigInt    @db.UnsignedBigInt
+  description String    @db.VarChar(255)
+  weight      Decimal   @db.Decimal(10, 2)
+  dimensions  Decimal?  @db.Decimal(10, 2)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([shipment_id], map: "packages_shipment_id_foreign")
+}
+
+model password_histories {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  model_type String    @db.VarChar(255)
+  model_id   BigInt    @db.UnsignedBigInt
+  password   String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model password_resets {
+  email      String    @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+
+  @@index([email], map: "password_resets_email_index")
+  @@ignore
+}
+
+model payment_details {
+  id             BigInt                         @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id    BigInt                         @db.UnsignedBigInt
+  amount         Decimal                        @db.Decimal(10, 2)
+  payment_status payment_details_payment_status @default(pending)
+  payment_method String?                        @db.VarChar(255)
+  created_at     DateTime?                      @db.Timestamp(0)
+  updated_at     DateTime?                      @db.Timestamp(0)
+
+  @@index([shipment_id], map: "payment_details_shipment_id_foreign")
+}
+
+model payment_methods {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  client_id   String?   @db.VarChar(255)
+  secret_key  String?   @db.VarChar(255)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  status      Boolean   @default(false)
+}
+
+model permissions {
+  id          BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  type        permissions_type
+  guard_name  String           @db.VarChar(255)
+  name        String           @db.VarChar(255)
+  description String?          @db.VarChar(255)
+  parent_id   BigInt?          @db.UnsignedBigInt
+  sort        Int              @default(1) @db.TinyInt
+  created_at  DateTime?        @db.Timestamp(0)
+  updated_at  DateTime?        @db.Timestamp(0)
+
+  @@index([parent_id], map: "permissions_parent_id_foreign")
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model pricings {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  category   String?   @default("Next Day") @db.VarChar(255)
+  weight     String    @db.VarChar(255)
+  price      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model proof_of_deliveries {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id BigInt    @db.UnsignedBigInt
+  image_path  String    @db.VarChar(255)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([shipment_id], map: "proof_of_deliveries_shipment_id_foreign")
+}
+
+model returned_shipments {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id Int
+  sender_id   Int?
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  driver_id   Int?
+}
+
+model role_has_permissions {
+  permission_id BigInt @db.UnsignedBigInt
+  role_id       BigInt @db.UnsignedBigInt
+
+  @@id([permission_id, role_id])
+  @@index([role_id], map: "role_has_permissions_role_id_foreign")
+}
+
+model roles {
+  id         BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  type       roles_type
+  name       String     @db.VarChar(255)
+  guard_name String     @db.VarChar(255)
+  created_at DateTime?  @db.Timestamp(0)
+  updated_at DateTime?  @db.Timestamp(0)
+}
+
+model salaries {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id     BigInt    @db.UnsignedBigInt
+  amount      Decimal   @db.Decimal(10, 2)
+  month       String    @db.VarChar(255)
+  year        Int?
+  is_advanced Boolean   @default(false)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([user_id], map: "salaries_user_id_foreign")
+}
+
+model salary_histories {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  salary_id    BigInt    @db.UnsignedBigInt
+  amount       Decimal   @db.Decimal(10, 2)
+  payment_date DateTime  @db.Date
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+
+  @@index([salary_id], map: "salary_histories_salary_id_foreign")
+}
+
+model schedule_shipments {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id Int?
+  date        DateTime? @db.Date
+  status      String?   @db.VarChar(255)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model services {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String    @db.VarChar(255)
+  image      String    @db.VarChar(255)
+  status     Boolean   @default(false)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  info       String?   @db.VarChar(255)
+}
+
+model settings {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  logo_light          String?   @db.VarChar(255)
+  logo_dark           String?   @db.VarChar(255)
+  seo_title           String?   @db.VarChar(255)
+  seo_description     String?   @db.Text
+  terms_and_condition String?   @db.LongText
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+  seo_keywords        String?   @db.LongText
+  privacy_policy      String?   @db.LongText
+  about_us            String?   @db.LongText
+  facebook            String?   @db.VarChar(255)
+  whatsapp            String?   @db.VarChar(255)
+  instagram           String?   @db.VarChar(255)
+  twitter             String?   @db.VarChar(255)
+  address             String?   @db.VarChar(255)
+  email               String?   @db.VarChar(255)
+  phone               String?   @db.VarChar(255)
+  google              String?   @db.Text
+  linkedin            String?   @db.VarChar(255)
+  tiktok              String?   @db.VarChar(255)
+}
+
+model shipment_assignments {
+  id                BigInt                                 @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id       BigInt                                 @db.UnsignedBigInt
+  driver_id         BigInt                                 @db.UnsignedBigInt
+  assignment_status shipment_assignments_assignment_status @default(assigned)
+  created_at        DateTime?                              @db.Timestamp(0)
+  updated_at        DateTime?                              @db.Timestamp(0)
+
+  @@index([driver_id], map: "shipment_assignments_driver_id_foreign")
+  @@index([shipment_id], map: "shipment_assignments_shipment_id_foreign")
+}
+
+model shipment_status_history {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  shipment_id BigInt    @db.UnsignedBigInt
+  status      String    @db.VarChar(255)
+  remarks     String?   @db.Text
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([shipment_id], map: "shipment_status_history_shipment_id_foreign")
+}
+
+model shipment_statuses {
+  id          BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  status      String?                  @db.VarChar(255)
+  description String?                  @db.VarChar(255)
+  portal      shipment_statuses_portal @default(driver)
+  created_at  DateTime?                @db.Timestamp(0)
+  updated_at  DateTime?                @db.Timestamp(0)
+}
+
+model shipment_types {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title      String?   @db.VarChar(255)
+  price      String?   @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model shipments {
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  batch_id           BigInt?              @db.UnsignedBigInt
+  tracking_number    String               @unique(map: "shipments_tracking_number_unique") @db.VarChar(255)
+  sender_id          BigInt               @db.UnsignedBigInt
+  receiver_id        BigInt?              @db.UnsignedBigInt
+  receiver_name      String?              @db.VarChar(255)
+  receiver_phone     String?              @db.VarChar(255)
+  receiver_email     String?              @db.VarChar(255)
+  receiver_address   String               @db.Text
+  shipment_type      String?              @default("standard") @db.VarChar(255)
+  package_weight     Decimal?             @db.Decimal(10, 2)
+  shipping_cost      Decimal?             @db.Decimal(10, 2)
+  status             String               @db.VarChar(255)
+  created_at         DateTime?            @db.Timestamp(0)
+  updated_at         DateTime?            @db.Timestamp(0)
+  payment_method_id  BigInt?              @db.UnsignedBigInt
+  pricing_id         Int?
+  reference_number   String?              @unique(map: "shipments_reference_number_unique") @db.VarChar(255)
+  city               String?              @db.VarChar(255)
+  area_name          String?              @db.VarChar(255)
+  comment            String?              @db.VarChar(255)
+  vehicle            String?              @db.VarChar(255)
+  sender_name        String?              @db.VarChar(255)
+  sender_email       String?              @db.VarChar(255)
+  sender_phone       String?              @db.VarChar(255)
+  sender_address     String?              @db.VarChar(255)
+  description        String?              @db.VarChar(255)
+  cod_price          String?              @db.VarChar(255)
+  sender_city        String?              @db.VarChar(255)
+  sender_area        String?              @db.VarChar(255)
+  payment_status     String?              @db.VarChar(255)
+  extra_charges      String?              @db.VarChar(255)
+  pieces             String?              @db.VarChar(255)
+  attempts           Int                  @default(0)
+  cod_price_requests cod_price_requests[]
+
+  @@index([batch_id], map: "shipments_batch_id_foreign")
+  @@index([receiver_id], map: "shipments_receiver_id_foreign")
+  @@index([sender_id], map: "shipments_sender_id_foreign")
+}
+
+model subscribers {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  email      String    @unique(map: "subscribers_email_unique") @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model testimonials {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title       String    @db.Text
+  testimonial String    @db.Text
+  client_name String    @db.VarChar(255)
+  company     String?   @db.VarChar(255)
+  status      Boolean   @default(false)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  images      String?   @db.VarChar(255)
+}
+
+model ticket_messages {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  ticket_id  BigInt    @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  message    String?   @db.Text
+  attachment String?   @db.VarChar(255)
+  read       Boolean   @default(false)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+
+  @@index([ticket_id], map: "ticket_messages_ticket_id_foreign")
+  @@index([user_id], map: "ticket_messages_user_id_foreign")
+}
+
+model tickets {
+  id          BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id     BigInt         @db.UnsignedBigInt
+  category    String?        @db.VarChar(255)
+  subject     String         @db.VarChar(255)
+  description String         @db.Text
+  status      tickets_status @default(open)
+  priority    String         @db.VarChar(255)
+  created_at  DateTime?      @db.Timestamp(0)
+  updated_at  DateTime?      @db.Timestamp(0)
+
+  @@index([user_id], map: "tickets_user_id_foreign")
+}
+
+model two_factor_authentications {
+  id                          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  authenticatable_type        String    @db.VarChar(255)
+  authenticatable_id          BigInt    @db.UnsignedBigInt
+  shared_secret               String    @db.VarChar(255)
+  enabled_at                  DateTime? @db.Timestamp(0)
+  label                       String    @db.VarChar(255)
+  digits                      Int       @default(6) @db.UnsignedTinyInt
+  seconds                     Int       @default(30) @db.UnsignedTinyInt
+  window                      Int       @default(0) @db.UnsignedTinyInt
+  algorithm                   String    @default("sha1") @db.VarChar(16)
+  recovery_codes              String?   @db.LongText
+  recovery_codes_generated_at DateTime? @db.Timestamp(0)
+  safe_devices                String?   @db.LongText
+  created_at                  DateTime? @db.Timestamp(0)
+  updated_at                  DateTime? @db.Timestamp(0)
+
+  @@index([authenticatable_type, authenticatable_id], map: "2fa_auth_type_auth_id_index")
+}
+
+model users {
+  id                                                BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  type                                              users_type              @default(user)
+  name                                              String                  @db.VarChar(255)
+  company_name                                      String?                 @db.VarChar(255)
+  email                                             String?                 @unique(map: "users_email_unique") @db.VarChar(255)
+  phone                                             String?                 @db.VarChar(255)
+  address                                           String?                 @db.VarChar(255)
+  city                                              String?                 @db.VarChar(255)
+  area                                              String?                 @db.VarChar(255)
+  email_verified_at                                 DateTime?               @db.Timestamp(0)
+  password                                          String?                 @db.VarChar(255)
+  password_changed_at                               DateTime?               @db.Timestamp(0)
+  active                                            Int                     @default(1) @db.UnsignedTinyInt
+  timezone                                          String?                 @db.VarChar(255)
+  last_login_at                                     DateTime?               @db.Timestamp(0)
+  last_login_ip                                     String?                 @db.VarChar(255)
+  to_be_logged_out                                  Boolean                 @default(false)
+  provider                                          String?                 @db.VarChar(255)
+  provider_id                                       String?                 @db.VarChar(255)
+  remember_token                                    String?                 @db.VarChar(100)
+  created_at                                        DateTime?               @db.Timestamp(0)
+  updated_at                                        DateTime?               @db.Timestamp(0)
+  deleted_at                                        DateTime?               @db.Timestamp(0)
+  service_fee                                       Decimal                 @default(100.00) @db.Decimal(8, 2)
+  salary                                            String?                 @db.VarChar(255)
+  settlement_type                                   String                  @default("Regular") @db.VarChar(255)
+  settlement_date                                   Int                     @default(1)
+  balances                                          balances[]
+  batch_shipments_batch_shipments_created_byTousers batch_shipments[]       @relation("batch_shipments_created_byTousers")
+  batch_shipments_batch_shipments_driver_idTousers  batch_shipments[]       @relation("batch_shipments_driver_idTousers")
+  cod_price_requests                                cod_price_requests[]
+  collect_from_shippers                             collect_from_shippers[]
+  driver_documents                                  driver_documents[]
+  drivers                                           drivers[]
+}
+
+model vehicles {
+  id                 BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title              String    @db.VarChar(255)
+  total_weight_carry String?   @db.VarChar(255)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+}
+
+enum permissions_type {
+  admin
+  user
+  driver
+}
+
+enum announcements_area {
+  frontend
+  backend
+}
+
+enum users_type {
+  admin
+  user
+  driver
+}
+
+enum roles_type {
+  admin
+  user
+  driver
+}
+
+enum ledgers_transaction_type {
+  debit
+  credit
+}
+
+enum announcements_type {
+  info
+  danger
+  warning
+  success
+}
+
+enum shipment_assignments_assignment_status {
+  assigned
+  collected
+  in_progress
+  completed
+  canceled
+}
+
+enum payment_details_payment_status {
+  pending
+  paid
+  failed
+}
+
+enum shipment_statuses_portal {
+  driver
+  user
+  admin
+}
+
+enum fines_payment_status {
+  paid
+  unpaid
+}
+
+enum tickets_status {
+  open
+  closed
+  in_progress
+  resolved
+}
+
+enum invoices_status {
+  Paid
+  Unpaid
+}
