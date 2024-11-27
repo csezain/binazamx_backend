@@ -1,10 +1,11 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { db } from "../../config/database";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const authRouter = express.Router();
 
-authRouter.post("/", async (req, res) => {
+authRouter.post("/", async (req: Request, res: Response): Promise<any> => {
   // Login with bcrypt and jwt
 
   const { email, passowrd } = req.body;
@@ -16,14 +17,33 @@ authRouter.post("/", async (req, res) => {
       },
     });
 
-    const match = bcrypt.compareSync(passowrd, user?.password || "");
+    const match = await bcrypt.compare(passowrd, user?.password || "");
+
+    const token = jwt.sign(
+      { id: user?.id, email: user?.email, role: user?.type },
+      String(process.env.JWT_SECRET)
+    );
 
     if (match) {
-      res.status(200).json({
-        user:{
-            
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: {
+          token: token,
         },
       });
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "Login failed",
+        data: null,
+      });
     }
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Login failed",
+      data: null,
+    });
+  }
 });
